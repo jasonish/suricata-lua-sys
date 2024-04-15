@@ -26,10 +26,14 @@ fn main() {
     if host.contains("windows") {
         command.arg("mingw");
     }
+
+    // Required for building into a shared library.
     command.arg("MYCFLAGS=-fPIC");
 
-    let status = command
-        .current_dir(&build_dir).status().unwrap();
+    // Don't inherit parent MAKEFLAGS, they may not be suitable for
+    // this build.
+    command.env_remove("MAKEFLAGS");
+
     let status = command.current_dir(&build_dir).status().unwrap();
     if !status.success() {
         panic!("build failed");
