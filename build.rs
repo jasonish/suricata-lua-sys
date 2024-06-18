@@ -18,6 +18,7 @@ fn main() {
     std::fs::create_dir_all(&out_dir).unwrap();
     let opts = fs_extra::dir::CopyOptions {
         copy_inside: true,
+        overwrite: true,
         ..Default::default()
     };
     fs_extra::dir::copy(manifest_dir.join("lua"), &build_dir, &opts).unwrap();
