@@ -42,4 +42,36 @@ fn main() {
 
     println!("cargo:rustc-link-lib=static=lua");
     println!("cargo:rustc-link-search=native={}", build_dir.display());
+
+    if let Err(err) = copy_headers(&build_dir) {
+        panic!("Failed to copy headers: {:?}", err);
+    }
+}
+
+fn copy_headers(build_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+    let dst_dir = if let Some(dst_dir) = env::var_os("SURICATA_LUA_SYS_HEADER_DST") {
+        dst_dir
+    } else {
+        return Ok(());
+    };
+
+    let rd = std::fs::read_dir(build_dir)
+        .map_err(|err| format!("Failed to open build directory {:?}: {:?}", build_dir, err))?;
+
+    for entry in rd.flatten() {
+        let path = entry.path();
+        if let Some(ext) = path.extension() {
+            if ext == "h" {
+                let basename = path
+                    .file_name()
+                    .ok_or_else(|| format!("Failed to determine basename for path {:?}", path))?;
+                let dst = PathBuf::from(&dst_dir).join(basename);
+                std::fs::copy(&path, &dst).map_err(|err| {
+                    format!("Failed to copy {:?} to {:?}: {:?}", &path, &dst, err)
+                })?;
+            }
+        }
+    }
+
+    Ok(())
 }
