@@ -40,6 +40,8 @@ fn main() {
         panic!("build failed");
     }
 
+    println!("cargo:rerun-if-env-changed=SURICATA_LUA_SYS_HEADER_DST");
+
     println!("cargo:rustc-link-lib=static=lua");
     println!("cargo:rustc-link-search=native={}", build_dir.display());
 
