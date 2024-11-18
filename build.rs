@@ -21,7 +21,8 @@ fn main() {
         overwrite: true,
         ..Default::default()
     };
-    fs_extra::dir::copy(manifest_dir.join("lua"), &build_dir, &opts).unwrap();
+    let src_dir = manifest_dir.join("lua");
+    fs_extra::dir::copy(&src_dir, &build_dir, &opts).unwrap();
 
     let mut command = Command::new("make");
     if host.contains("windows") {
@@ -45,7 +46,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static=lua");
     println!("cargo:rustc-link-search=native={}", build_dir.display());
 
-    if let Err(err) = copy_headers(&build_dir) {
+    if let Err(err) = copy_headers(&src_dir) {
         panic!("Failed to copy headers: {:?}", err);
     }
 }
@@ -68,12 +69,60 @@ fn copy_headers(build_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
                     .file_name()
                     .ok_or_else(|| format!("Failed to determine basename for path {:?}", path))?;
                 let dst = PathBuf::from(&dst_dir).join(basename);
-                std::fs::copy(&path, &dst).map_err(|err| {
-                    format!("Failed to copy {:?} to {:?}: {:?}", &path, &dst, err)
-                })?;
+
+                if should_copy(&path, &dst) {
+                    std::fs::copy(&path, &dst).map_err(|err| {
+                        format!("Failed to copy {:?} to {:?}: {:?}", &path, &dst, err)
+                    })?;
+                    println!("cargo:rerun-if-changed={}", path.display());
+                }
             }
         }
     }
 
     Ok(())
+}
+
+/// Check if we should copy path to destination.
+///
+/// - If dst doesn't exist
+/// - If path and dst sizes differ
+/// - If path is newer than dst
+///
+/// The idea is to avoid unecessary copying, as that can trigger
+/// unnecessary rebuilds of the C code that includes the headers.
+fn should_copy(path: &PathBuf, dst: &PathBuf) -> bool {
+    let dst_meta = if let Ok(meta) = std::fs::metadata(dst) {
+        meta
+    } else {
+        // Destination path does not exist, copy.
+        return true;
+    };
+
+    let path_meta = if let Ok(meta) = std::fs::metadata(path) {
+        meta
+    } else {
+        return true;
+    };
+
+    // If the sizes are different, copy.
+    if path_meta.len() != dst_meta.len() {
+        return true;
+    }
+
+    // If path is newer than dst, copy. But also copy if we fail to
+    // get the time of either path.
+    if let Ok(path_modified) = path_meta.modified() {
+        if let Ok(dst_modified) = dst_meta.modified() {
+            if path_modified > dst_modified {
+                return true;
+            }
+        } else {
+            return true;
+        }
+    } else {
+        return true;
+    }
+
+    false
 }
