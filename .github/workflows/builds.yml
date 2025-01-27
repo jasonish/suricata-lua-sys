@@ -25,7 +25,7 @@ jobs:
       - run: cargo build
 
   cross-compile:
-    name: Cross Compile Test
+    name: Cross Compile
     runs-on: ubuntu-latest
     container: almalinux:9
     steps:
@@ -33,9 +33,12 @@ jobs:
           dnf -y install dnf-plugins-core
           dnf config-manager --set-enable crb
           dnf -y install \
-              cargo \
-              mingw64-gcc \
-              rustc
+              gcc \
+              make \
+              mingw64-gcc
+      - run: curl https://sh.rustup.rs -sSf | sh -s -- -y
+      - run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - run: rustup target add x86_64-pc-windows-gnu
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - run: |
           RANLIB=x86_64-w64-mingw32-ranlib \

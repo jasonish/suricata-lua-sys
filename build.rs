@@ -4,6 +4,9 @@ fn main() {
     let host = env::var_os("HOST")
         .map(|host| host.into_string().unwrap())
         .unwrap();
+    let target = env::var_os("TARGET")
+        .map(|host| host.into_string().unwrap())
+        .unwrap();
 
     let out_dir = env::var_os("OUT_DIR").map(PathBuf::from).unwrap();
     let build_dir = out_dir.join("lua");
@@ -25,7 +28,7 @@ fn main() {
     fs_extra::dir::copy(&src_dir, &build_dir, &opts).unwrap();
 
     let mut command = Command::new("make");
-    if host.contains("windows") {
+    if host.contains("windows") || target.contains("windows") {
         command.arg("mingw");
     }
 
