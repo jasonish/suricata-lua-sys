@@ -1,0 +1,59 @@
+name: builds
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+
+  linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    container: almalinux:9
+    steps:
+      - run: |
+          dnf -y install \
+              cargo \
+              rustc
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: cargo build
+
+  cross-compile:
+    name: Cross Compile Test
+    runs-on: ubuntu-latest
+    container: almalinux:9
+    steps:
+      - run: |
+          dnf -y install dnf-plugins-core
+          dnf config-manager --set-enable crb
+          dnf -y install \
+              cargo \
+              mingw64-gcc \
+              rustc
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: |
+          RANLIB=x86_64-w64-mingw32-ranlib \
+              AR=x86_64-w64-mingw32-ar \
+              CC=x86_64-w64-mingw32-gcc \
+              cargo build --target x86_64-pc-windows-gnu
+
+  windows-msys2-mingw64:
+    name: Windows MSYS2 MINGW64
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: git mingw-w64-x86_64-toolchain make mingw-w64-x86_64-rust
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: cargo build
