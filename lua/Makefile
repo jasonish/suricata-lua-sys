@@ -6,13 +6,15 @@
 # Your platform. See PLATS for possible values.
 PLAT= guess
 
-CC= gcc -std=gnu99
+CC?= gcc
+CC_CMD= $(CC) -std=gnu99
 CFLAGS= -O2 -Wall -Wextra -DLUA_COMPAT_5_3 $(SYSCFLAGS) $(MYCFLAGS)
 LDFLAGS= $(SYSLDFLAGS) $(MYLDFLAGS)
 LIBS= -lm $(SYSLIBS) $(MYLIBS)
 
-AR= ar rcu
-RANLIB= ranlib
+AR?= ar rcu
+AR_CMD = $(AR) rcu
+RANLIB?= ranlib
 RM= rm -f
 UNAME= uname
 
@@ -57,14 +59,14 @@ o:	$(ALL_O)
 a:	$(ALL_A)
 
 $(LUA_A): $(BASE_O)
-	$(AR) $@ $(BASE_O)
+	$(AR_CMD) $@ $(BASE_O)
 	$(RANLIB) $@
 
 $(LUA_T): $(LUA_O) $(LUA_A)
-	$(CC) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
+	$(CC_CMD) -o $@ $(LDFLAGS) $(LUA_O) $(LUA_A) $(LIBS)
 
 $(LUAC_T): $(LUAC_O) $(LUA_A)
-	$(CC) -o $@ $(LDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
+	$(CC_CMD) -o $@ $(LDFLAGS) $(LUAC_O) $(LUA_A) $(LIBS)
 
 test:
 	./$(LUA_T) -v
@@ -73,7 +75,7 @@ clean:
 	$(RM) $(ALL_T) $(ALL_O)
 
 depend:
-	@$(CC) $(CFLAGS) -MM l*.c
+	@$(CC_CMD) $(CFLAGS) -MM l*.c
 
 echo:
 	@echo "PLAT= $(PLAT)"
@@ -99,13 +101,13 @@ guess:
 	@$(MAKE) `$(UNAME)`
 
 AIX aix:
-	$(MAKE) $(ALL) CC="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN" SYSLIBS="-ldl" SYSLDFLAGS="-brtl -bexpall"
+	$(MAKE) $(ALL) CC_CMD="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN" SYSLIBS="-ldl" SYSLDFLAGS="-brtl -bexpall"
 
 bsd:
 	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN" SYSLIBS="-Wl,-E"
 
 c89:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_C89" CC="gcc -std=c89"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_C89" CC_CMD="gcc -std=c89"
 	@echo ''
 	@echo '*** C89 does not guarantee 64-bit integers for Lua.'
 	@echo '*** Make sure to compile all external Lua libraries'
@@ -113,7 +115,7 @@ c89:
 	@echo ''
 
 FreeBSD NetBSD OpenBSD freebsd:
-	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -DLUA_USE_READLINE -I/usr/include/edit" SYSLIBS="-Wl,-E -ledit" CC="cc"
+	$(MAKE) $(ALL) SYSCFLAGS="-DLUA_USE_LINUX -DLUA_USE_READLINE -I/usr/include/edit" SYSLIBS="-Wl,-E -ledit" CC_CMD="cc"
 
 generic: $(ALL)
 
@@ -133,7 +135,7 @@ Darwin macos macosx:
 
 mingw:
 	$(MAKE) "LUA_A=lua54.dll" "LUA_T=lua.exe" \
-	"AR=$(CC) -shared -o" "RANLIB=strip --strip-unneeded" \
+	"AR_CMD=$(CC_CMD) -shared -o" "RANLIB=strip --strip-unneeded" \
 	"SYSCFLAGS=-DLUA_BUILD_AS_DLL" "SYSLIBS=" "SYSLDFLAGS=-s" lua.exe
 	$(MAKE) "LUAC_T=luac.exe" luac.exe
 
@@ -148,13 +150,13 @@ SunOS solaris:
 
 # Compiler modules may use special flags.
 llex.o:
-	$(CC) $(CFLAGS) $(CMCFLAGS) -c llex.c
+	$(CC_CMD) $(CFLAGS) $(CMCFLAGS) -c llex.c
 
 lparser.o:
-	$(CC) $(CFLAGS) $(CMCFLAGS) -c lparser.c
+	$(CC_CMD) $(CFLAGS) $(CMCFLAGS) -c lparser.c
 
 lcode.o:
-	$(CC) $(CFLAGS) $(CMCFLAGS) -c lcode.c
+	$(CC_CMD) $(CFLAGS) $(CMCFLAGS) -c lcode.c
 
 # DO NOT DELETE
 
