@@ -32,8 +32,12 @@ fn main() {
         command.arg("mingw");
     }
 
-    // Required for building into a shared library.
-    command.arg("MYCFLAGS=-fPIC");
+    // -fPIC is required for building into a shared library; also
+    // pass-through CFLAGS to MYCFLAGS.
+    command.arg(format!(
+        "MYCFLAGS=-fPIC {}",
+        env::var("CFLAGS").unwrap_or_default()
+    ));
 
     // Don't inherit parent MAKEFLAGS, they may not be suitable for
     // this build.
@@ -45,6 +49,7 @@ fn main() {
     }
 
     println!("cargo:rerun-if-env-changed=SURICATA_LUA_SYS_HEADER_DST");
+    println!("cargo:rerun-if-env-changed=CFLAGS");
 
     println!("cargo:rustc-link-lib=static=lua");
     println!("cargo:rustc-link-search=native={}", build_dir.display());
