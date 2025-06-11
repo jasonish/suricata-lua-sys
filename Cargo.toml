@@ -9,7 +9,7 @@ license = "MIT"
 # patch releases.  For example:
 #    5.4.8 -> 5.4.8000
 # Then if we need to make a patch we can release 5.4.8001.
-version = "5.4.8000"
+version = "5.4.8001"
 
 [build-dependencies]
 fs_extra = "1.3.0"
